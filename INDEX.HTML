@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malla Curricular CEIM 2025</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #222;
+      color: white;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header img {
+      height: 50px;
+    }
+    .contenedor {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 10px;
+      padding: 20px;
+      overflow-x: auto;
+    }
+    .anio {
+      background: #dee2e6;
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .anio h3 {
+      text-align: center;
+      margin: 0 0 10px;
+    }
+    .materia {
+      background: #ffffff;
+      border: 1px solid #ccc;
+      padding: 6px;
+      margin: 5px 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+      position: relative;
+    }
+    .materia:hover {
+      background: #e9ecef;
+    }
+    .materia.aprobada {
+      background: #a5d6a7;
+      color: #155724;
+    }
+    .materia.bloqueada {
+      background: #f8d7da;
+      color: #721c24;
+      cursor: not-allowed;
+    }
+    .materia .tooltip {
+      visibility: hidden;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 4px 8px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+    .materia:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+    #progreso-container {
+      margin: 15px;
+    }
+    .barra-progreso {
+      height: 20px;
+      background: #e9ecef;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .barra-progreso span {
+      display: block;
+      height: 100%;
+      background: #28a745;
+      text-align: center;
+      color: white;
+    }
+    footer {
+      text-align: center;
+      padding: 10px;
+      font-size: 0.9em;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Malla Curricular CEIM 2025</h1>
+  </header>
+
+  <div id="progreso-container">
+    <strong>Progreso:</strong> <span id="porcentaje">0%</span>
+    <div class="barra-progreso">
+      <span id="barra" style="width: 0%"></span>
+    </div>
+  </div>
+
+  <div class="contenedor" id="malla"></div>
+
+  <footer>Página creada por Rocío Gallardo, Presidenta CEIM 2025</footer>
+
+  <script>
+    const materias = /*LONG_JSON_REEMPLAZO*/;
+    const estado = JSON.parse(localStorage.getItem('estadoMaterias') || '{}');
+
+    function actualizarProgreso() {
+      const total = document.querySelectorAll('.materia').length;
+      const aprobadas = document.querySelectorAll('.materia.aprobada').length;
+      const porcentaje = Math.round((aprobadas / total) * 100);
+      document.getElementById('porcentaje').textContent = porcentaje + '%';
+      document.getElementById('barra').style.width = porcentaje + '%';
+    }
+
+    function crearMalla() {
+      const contenedor = document.getElementById('malla');
+      for (let ciclo in materias) {
+        const columna = document.createElement('div');
+        columna.className = 'anio';
+        const titulo = document.createElement('h3');
+        titulo.textContent = 'Semestre ' + ciclo;
+        columna.appendChild(titulo);
+
+        materias[ciclo].forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'materia';
+          div.textContent = estado[m.id] ? '✅ ' + m.nombre : m.nombre;
+          if (estado[m.id]) div.classList.add('aprobada');
+          if (m.req && !m.req.every(r => estado[r])) {
+            div.classList.add('bloqueada');
+            const tooltip = document.createElement('span');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = 'Requiere: ' + m.req.map(r => materiasPorId[r]).join(', ');
+            div.appendChild(tooltip);
+          }
+
+          div.addEventListener('click', () => {
+            if (div.classList.contains('bloqueada')) return;
+            estado[m.id] = !estado[m.id];
+            localStorage.setItem('estadoMaterias', JSON.stringify(estado));
+            location.reload();
+          });
+
+          columna.appendChild(div);
+        });
+        contenedor.appendChild(columna);
+      }
+      actualizarProgreso();
+    }
+
+    const materiasPorId = {};
+    for (let ciclo in materias) {
+      materias[ciclo].forEach(m => materiasPorId[m.id] = m.nombre);
+    }
+
+    crearMalla();
+  </script>
+</body>
+</html>
